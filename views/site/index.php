@@ -2,50 +2,51 @@
 
 /** @var yii\web\View $this */
 
-$this->title = 'My Yii Application';
+use yii\helpers\Html;
+
+$this->title = 'Каталог книг';
 ?>
 <div class="site-index">
 
     <div class="jumbotron text-center bg-transparent mt-5 mb-5">
-        <h1 class="display-4">Congratulations!</h1>
+        <h1 class="display-4">Добро пожаловать в каталог книг!</h1>
 
-        <p class="lead">You have successfully created your Yii-powered application.</p>
+        <p class="lead">Просматривайте книги, узнавайте об авторах и подписывайтесь на уведомления о новинках.</p>
 
-        <p><a class="btn btn-lg btn-success" href="https://www.yiiframework.com">Get started with Yii</a></p>
+        <p>
+            <?= Html::a('Перейти к книгам', ['book/index'], ['class' => 'btn btn-lg btn-success']) ?>
+        </p>
     </div>
 
     <div class="body-content">
 
         <div class="row">
             <div class="col-lg-4 mb-3">
-                <h2>Heading</h2>
+                <h2>Каталог книг</h2>
 
-                <p>Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et
-                    dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip
-                    ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu
-                    fugiat nulla pariatur.</p>
+                <p>Просматривайте полный каталог книг с информацией о названии, годе выпуска, авторах и описании.
+                <?php if (!Yii::$app->user->isGuest): ?>
+                Авторизованные пользователи могут добавлять, редактировать и удалять книги.
+                <?php endif; ?>
+                </p>
 
-                <p><a class="btn btn-outline-secondary" href="https://www.yiiframework.com/doc/">Yii Documentation &raquo;</a></p>
+                <p><?= Html::a('Смотреть книги &raquo;', ['book/index'], ['class' => 'btn btn-outline-secondary']) ?></p>
             </div>
             <div class="col-lg-4 mb-3">
-                <h2>Heading</h2>
+                <h2>Авторы</h2>
 
-                <p>Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et
-                    dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip
-                    ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu
-                    fugiat nulla pariatur.</p>
+                <p>Узнайте больше об авторах книг. Просматривайте их работы и подписывайтесь на уведомления
+                о новых книгах избранных авторов. При появлении новой книги вы получите SMS-уведомление.</p>
 
-                <p><a class="btn btn-outline-secondary" href="https://www.yiiframework.com/forum/">Yii Forum &raquo;</a></p>
+                <p><?= Html::a('Список авторов &raquo;', ['author/index'], ['class' => 'btn btn-outline-secondary']) ?></p>
             </div>
             <div class="col-lg-4">
-                <h2>Heading</h2>
+                <h2>ТОП-10 авторов</h2>
 
-                <p>Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod tempor incididunt ut labore et
-                    dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip
-                    ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu
-                    fugiat nulla pariatur.</p>
+                <p>Смотрите рейтинг самых продуктивных авторов за выбранный год.
+                Узнайте, кто из авторов выпустил больше всего книг в интересующий вас период.</p>
 
-                <p><a class="btn btn-outline-secondary" href="https://www.yiiframework.com/extensions/">Yii Extensions &raquo;</a></p>
+                <p><?= Html::a('Посмотреть рейтинг &raquo;', ['report/top-authors'], ['class' => 'btn btn-outline-secondary']) ?></p>
             </div>
         </div>
 
