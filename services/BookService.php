@@ -1,16 +1,20 @@
 <?php
 
+declare(strict_types=1);
+
 namespace app\services;
 
 use app\models\Book;
 use app\models\Subscription;
 use Yii;
 use yii\web\UploadedFile;
+use app\models\Author;
+use yii\base\InvalidConfigException;
 
 /**
  * Service for managing books
  */
-class BookService
+final readonly class BookService
 {
     private StorageService $storageService;
 
@@ -25,14 +29,13 @@ class BookService
      * @param array $authorIds
      * @return bool
      */
-    public function save(Book $book, array $authorIds = [])
+    public function save(Book $book, array $authorIds = []): bool
     {
         $transaction = Yii::$app->db->beginTransaction();
 
         try {
             $isNewBook = $book->isNewRecord;
 
-            // Handle image upload
             $book->imageFile = UploadedFile::getInstance($book, 'imageFile');
 
             if ($book->imageFile) {
@@ -42,7 +45,6 @@ class BookService
                 if ($this->storageService->uploadFile($book->imageFile, $fileName)) {
                     $book->cover_image = $fileName;
 
-                    // Delete old cover if exists
                     if ($oldCover && !$isNewBook) {
                         $this->storageService->deleteFile($oldCover);
                     }
@@ -54,14 +56,12 @@ class BookService
                 return false;
             }
 
-            // Link authors
             if (!empty($authorIds)) {
                 $book->linkAuthors($authorIds);
             }
 
             $transaction->commit();
 
-            // Notify subscribers about new book
             if ($isNewBook) {
                 $this->notifySubscribers($book);
             }
@@ -80,13 +80,13 @@ class BookService
      *
      * @param Book $book
      * @return bool
+     * @throws \Throwable
      */
-    public function delete(Book $book)
+    public function delete(Book $book): bool
     {
         $transaction = Yii::$app->db->beginTransaction();
 
         try {
-            // Delete cover image
             if ($book->cover_image) {
                 $this->storageService->deleteFile($book->cover_image);
             }
@@ -111,8 +111,9 @@ class BookService
      *
      * @param Book $book
      * @return void
+     * @throws InvalidConfigException
      */
-    protected function notifySubscribers(Book $book)
+    protected function notifySubscribers(Book $book): void
     {
         $authorIds = $book->getAuthorIds();
 
@@ -138,10 +139,10 @@ class BookService
      * Build notification message
      *
      * @param Book $book
-     * @param \app\models\Author $author
+     * @param Author $author
      * @return string
      */
-    protected function buildNotificationMessage(Book $book, $author)
+    protected function buildNotificationMessage(Book $book, Author $author): string
     {
         return sprintf(
             'Новая книга "%s" автора %s уже в каталоге!',

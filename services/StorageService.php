@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace app\services;
 
 use Aws\S3\S3Client;
@@ -93,21 +95,24 @@ class StorageService
     }
 
     /**
-     * Upload file to MinIO or local storage
+     * Upload file to MinIO or local storage with unique name
      *
      * @param UploadedFile $file
-     * @param string $fileName
-     * @return bool
+     * @param string $prefix
+     * @return string|false  Returns the generated file name on success, false on failure
      */
-    public function uploadFile(UploadedFile $file, string $fileName): bool
+    public function uploadFile(UploadedFile $file, string $prefix = 'cover'): string|false
     {
-        // Use local storage if fallback is enabled
+        do {
+            $fileName = $this->generateFileName($file, $prefix);
+        } while ($this->fileExists($fileName));
+
         if ($this->useFallbackStorage) {
-            return $this->uploadToLocalStorage($file, $fileName);
+            return $this->uploadToLocalStorage($file, $fileName) ? $fileName : false;
         }
 
         try {
-            $result = $this->s3Client->putObject([
+            $this->s3Client->putObject([
                 'Bucket' => $this->bucket,
                 'Key' => $fileName,
                 'Body' => fopen($file->tempName, 'r'),
@@ -116,14 +121,13 @@ class StorageService
             ]);
 
             Yii::info("File uploaded successfully to MinIO: {$fileName}", __METHOD__);
-            return true;
+            return $fileName;
 
         } catch (AwsException $e) {
             Yii::error("MinIO upload failed: " . $e->getMessage(), __METHOD__);
             Yii::warning("Attempting fallback to local storage", __METHOD__);
             $this->useFallbackStorage = true;
-            $this->ensureLocalDirectoryExists();
-            return $this->uploadToLocalStorage($file, $fileName);
+            return $this->uploadToLocalStorage($file, $fileName) ? $fileName : false;
         }
     }
 
@@ -157,7 +161,6 @@ class StorageService
      */
     public function deleteFile(string $fileName): bool
     {
-        // Use local storage if fallback is enabled
         if ($this->useFallbackStorage) {
             return $this->deleteFromLocalStorage($fileName);
         }
@@ -173,7 +176,6 @@ class StorageService
 
         } catch (AwsException $e) {
             Yii::error("MinIO delete failed: " . $e->getMessage(), __METHOD__);
-            // Try local storage as fallback
             return $this->deleteFromLocalStorage($fileName);
         }
     }
@@ -207,15 +209,12 @@ class StorageService
      */
     public function getFileUrl(string $fileName): string
     {
-        // If using local storage, return local URL
         if ($this->useFallbackStorage) {
             return Yii::getAlias('@web') . '/uploads/covers/' . $fileName;
         }
 
-        // For public access through MinIO
         $endpoint = $_ENV['MINIO_ENDPOINT'] ?? 'http://localhost:9000';
 
-        // Replace internal Docker hostname with localhost for browser access
         $publicEndpoint = str_replace('minio:9000', 'localhost:9000', $endpoint);
 
         return "{$publicEndpoint}/{$this->bucket}/{$fileName}";
@@ -229,7 +228,6 @@ class StorageService
      */
     public function fileExists(string $fileName): bool
     {
-        // Check local storage if fallback is enabled
         if ($this->useFallbackStorage) {
             return file_exists($this->localUploadPath . $fileName);
         }
@@ -238,7 +236,6 @@ class StorageService
             return $this->s3Client->doesObjectExist($this->bucket, $fileName);
         } catch (AwsException $e) {
             Yii::error("Error checking file existence in MinIO: " . $e->getMessage(), __METHOD__);
-            // Fallback to local storage check
             return file_exists($this->localUploadPath . $fileName);
         }
     }

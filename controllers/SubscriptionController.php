@@ -1,11 +1,14 @@
 <?php
 
+declare(strict_types=1);
+
 namespace app\controllers;
 
 use app\models\Subscription;
 use app\models\Author;
 use app\services\SubscriptionService;
 use Yii;
+use yii\db\Exception;
 use yii\web\Controller;
 use yii\web\Response;
 use yii\filters\VerbFilter;
@@ -26,7 +29,7 @@ class SubscriptionController extends Controller
     /**
      * {@inheritdoc}
      */
-    public function behaviors()
+    public function behaviors(): array
     {
         return [
             'verbs' => [
@@ -42,8 +45,9 @@ class SubscriptionController extends Controller
      * Subscribe to author's new books
      *
      * @return Response
+     * @throws Exception
      */
-    public function actionCreate()
+    public function actionCreate(): Response
     {
         $authorId = Yii::$app->request->post('author_id');
         $email = Yii::$app->request->post('email');
@@ -82,9 +86,10 @@ class SubscriptionController extends Controller
      * Display subscription form
      *
      * @param int $authorId
-     * @return string
+     * @return string|Response
+     * @throws Exception
      */
-    public function actionSubscribe($authorId)
+    public function actionSubscribe(int $authorId): string|Response
     {
         $author = Author::findOne($authorId);
 

@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace app\services;
 
 use Yii;
@@ -7,7 +9,7 @@ use Yii;
 /**
  * Service for sending SMS via smspilot.ru
  */
-class SmsService
+final readonly class SmsService
 {
     const API_URL = 'https://smspilot.ru/api.php';
     const API_KEY = 'XXXXXXXXXXXXYYYYYYYYYYYYZZZZZZZZXXXXXXXXXXXXYYYYYYYYYYYYZZZZZZZZ';
@@ -19,9 +21,8 @@ class SmsService
      * @param string $message Message text
      * @return bool
      */
-    public function send($phone, $message)
+    public function send(string $phone, string $message): bool
     {
-        // Use emulator key for testing
         $apiKey = Yii::$app->params['smspilot']['apiKey'] ?? self::API_KEY;
 
         $params = [
@@ -59,7 +60,7 @@ class SmsService
      * @param array $params
      * @return array|null
      */
-    protected function makeRequest(array $params)
+    protected function makeRequest(array $params): ?string
     {
         $url = self::API_URL . '?' . http_build_query($params);
 
@@ -86,51 +87,21 @@ class SmsService
      * @param string $phone
      * @return string
      */
-    protected function normalizePhone($phone)
+    protected function normalizePhone(string $phone): string
     {
         // Remove all non-numeric characters except +
         $phone = preg_replace('/[^\d\+]/', '', $phone);
 
         // If phone starts with 8, replace with +7
-        if (strpos($phone, '8') === 0) {
+        if (str_starts_with($phone, '8')) {
             $phone = '+7' . substr($phone, 1);
         }
 
         // If phone doesn't start with +, add +7
-        if (strpos($phone, '+') !== 0) {
+        if (!str_starts_with($phone, '+')) {
             $phone = '+7' . $phone;
         }
 
         return $phone;
-    }
-
-    /**
-     * Check SMS balance
-     *
-     * @return float|null
-     */
-    public function getBalance()
-    {
-        $apiKey = Yii::$app->params['smspilot']['apiKey'] ?? self::API_KEY;
-
-        $params = [
-            'balance' => '',
-            'apikey' => $apiKey,
-            'format' => 'json',
-        ];
-
-        try {
-            $response = $this->makeRequest($params);
-
-            if ($response && isset($response['balance'])) {
-                return (float) $response['balance'];
-            }
-
-            return null;
-
-        } catch (\Exception $e) {
-            Yii::error("Failed to check balance: " . $e->getMessage(), __METHOD__);
-            return null;
-        }
     }
 }

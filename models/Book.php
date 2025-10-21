@@ -5,6 +5,10 @@ namespace app\models;
 use yii\db\ActiveRecord;
 use yii\behaviors\TimestampBehavior;
 use yii\web\UploadedFile;
+use yii\db\ActiveQuery;
+use yii\base\InvalidConfigException;
+use yii\db\Exception;
+use app\services\StorageService;
 
 /**
  * Book model
@@ -31,7 +35,7 @@ class Book extends ActiveRecord
     /**
      * {@inheritdoc}
      */
-    public static function tableName()
+    public static function tableName(): string
     {
         return '{{%books}}';
     }
@@ -39,7 +43,7 @@ class Book extends ActiveRecord
     /**
      * {@inheritdoc}
      */
-    public function behaviors()
+    public function behaviors(): array
     {
         return [
             TimestampBehavior::class,
@@ -49,7 +53,7 @@ class Book extends ActiveRecord
     /**
      * {@inheritdoc}
      */
-    public function rules()
+    public function rules(): array
     {
         return [
             [['title', 'year'], 'required'],
@@ -68,7 +72,7 @@ class Book extends ActiveRecord
     /**
      * {@inheritdoc}
      */
-    public function attributeLabels()
+    public function attributeLabels(): array
     {
         return [
             'id' => 'ID',
@@ -86,9 +90,10 @@ class Book extends ActiveRecord
     /**
      * Gets query for [[Authors]].
      *
-     * @return \yii\db\ActiveQuery
+     * @return ActiveQuery
+     * @throws InvalidConfigException
      */
-    public function getAuthors()
+    public function getAuthors(): ActiveQuery
     {
         return $this->hasMany(Author::class, ['id' => 'author_id'])
             ->viaTable('{{%book_author}}', ['book_id' => 'id']);
@@ -98,8 +103,9 @@ class Book extends ActiveRecord
      * Get authors IDs for form.
      *
      * @return array
+     * @throws InvalidConfigException
      */
-    public function getAuthorIds()
+    public function getAuthorIds(): array
     {
         return $this->getAuthors()->select('id')->column();
     }
@@ -109,13 +115,12 @@ class Book extends ActiveRecord
      *
      * @param array $authorIds
      * @return void
+     * @throws Exception
      */
-    public function linkAuthors(array $authorIds)
+    public function linkAuthors(array $authorIds): void
     {
-        // Remove old links
         BookAuthor::deleteAll(['book_id' => $this->id]);
 
-        // Add new links
         foreach ($authorIds as $authorId) {
             $bookAuthor = new BookAuthor();
             $bookAuthor->book_id = $this->id;
@@ -129,10 +134,10 @@ class Book extends ActiveRecord
      *
      * @return string|null
      */
-    public function getCoverUrl()
+    public function getCoverUrl(): ?string
     {
         if ($this->cover_image) {
-            $storageService = new \app\services\StorageService();
+            $storageService = new StorageService();
             return $storageService->getFileUrl($this->cover_image);
         }
         return null;

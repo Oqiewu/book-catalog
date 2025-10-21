@@ -1,8 +1,11 @@
 <?php
 
+declare(strict_types=1);
+
 namespace app\models;
 
 use yii\db\ActiveRecord;
+use yii\db\ActiveQuery;
 
 /**
  * BookAuthor junction model
@@ -18,7 +21,7 @@ class BookAuthor extends ActiveRecord
     /**
      * {@inheritdoc}
      */
-    public static function tableName()
+    public static function tableName(): string
     {
         return '{{%book_author}}';
     }
@@ -26,7 +29,7 @@ class BookAuthor extends ActiveRecord
     /**
      * {@inheritdoc}
      */
-    public function rules()
+    public function rules(): array
     {
         return [
             [['book_id', 'author_id'], 'required'],
@@ -39,9 +42,9 @@ class BookAuthor extends ActiveRecord
     /**
      * Gets query for [[Book]].
      *
-     * @return \yii\db\ActiveQuery
+     * @return ActiveQuery
      */
-    public function getBook()
+    public function getBook(): ActiveQuery
     {
         return $this->hasOne(Book::class, ['id' => 'book_id']);
     }
@@ -49,9 +52,9 @@ class BookAuthor extends ActiveRecord
     /**
      * Gets query for [[Author]].
      *
-     * @return \yii\db\ActiveQuery
+     * @return ActiveQuery
      */
-    public function getAuthor()
+    public function getAuthor(): ActiveQuery
     {
         return $this->hasOne(Author::class, ['id' => 'author_id']);
     }

@@ -1,9 +1,12 @@
 <?php
 
+declare(strict_types=1);
+
 namespace app\models;
 
 use Yii;
 use yii\base\Model;
+use yii\db\Exception;
 
 /**
  * Signup form
@@ -18,7 +21,7 @@ class SignupForm extends Model
     /**
      * {@inheritdoc}
      */
-    public function rules()
+    public function rules(): array
     {
         return [
             [['username', 'email', 'password', 'password_repeat'], 'required'],
@@ -39,7 +42,7 @@ class SignupForm extends Model
     /**
      * {@inheritdoc}
      */
-    public function attributeLabels()
+    public function attributeLabels(): array
     {
         return [
             'username' => 'Имя пользователя',
@@ -53,8 +56,9 @@ class SignupForm extends Model
      * Signs user up.
      *
      * @return User|null the saved model or null if saving fails
+     * @throws Exception
      */
-    public function signup()
+    public function signup(): ?User
     {
         if (!$this->validate()) {
             return null;

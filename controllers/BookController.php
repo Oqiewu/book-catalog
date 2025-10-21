@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace app\controllers;
 
 use app\models\Book;
@@ -11,6 +13,7 @@ use yii\web\NotFoundHttpException;
 use yii\filters\AccessControl;
 use yii\filters\VerbFilter;
 use yii\data\ActiveDataProvider;
+use yii\web\Response;
 
 /**
  * BookController implements the CRUD actions for Book model.
@@ -28,7 +31,7 @@ class BookController extends Controller
     /**
      * {@inheritdoc}
      */
-    public function behaviors()
+    public function behaviors(): array
     {
         return [
             'access' => [
@@ -56,7 +59,7 @@ class BookController extends Controller
      *
      * @return string
      */
-    public function actionIndex()
+    public function actionIndex(): string
     {
         $dataProvider = new ActiveDataProvider([
             'query' => Book::find()->with('authors')->orderBy(['created_at' => SORT_DESC]),
@@ -77,7 +80,7 @@ class BookController extends Controller
      * @return string
      * @throws NotFoundHttpException if the model cannot be found
      */
-    public function actionView($id)
+    public function actionView(int $id): string
     {
         return $this->render('view', [
             'model' => $this->findModel($id),
@@ -87,9 +90,9 @@ class BookController extends Controller
     /**
      * Creates a new Book model.
      *
-     * @return string|\yii\web\Response
+     * @return string|Response
      */
-    public function actionCreate()
+    public function actionCreate(): string|Response
     {
         $model = new Book();
         $authors = Author::find()->orderBy(['last_name' => SORT_ASC])->all();
@@ -97,7 +100,6 @@ class BookController extends Controller
         if ($model->load(Yii::$app->request->post())) {
             $authorIds = Yii::$app->request->post('author_ids', []);
 
-            // Validate that at least one author is selected
             if (empty($authorIds)) {
                 $model->addError('authors', 'Необходимо выбрать хотя бы одного автора.');
                 return $this->render('create', [
@@ -124,10 +126,10 @@ class BookController extends Controller
      * Updates an existing Book model.
      *
      * @param int $id ID
-     * @return string|\yii\web\Response
+     * @return string|Response
      * @throws NotFoundHttpException if the model cannot be found
      */
-    public function actionUpdate($id)
+    public function actionUpdate(int $id): string|Response
     {
         $model = $this->findModel($id);
         $authors = Author::find()->orderBy(['last_name' => SORT_ASC])->all();
@@ -135,7 +137,6 @@ class BookController extends Controller
         if ($model->load(Yii::$app->request->post())) {
             $authorIds = Yii::$app->request->post('author_ids', []);
 
-            // Validate that at least one author is selected
             if (empty($authorIds)) {
                 $model->addError('authors', 'Необходимо выбрать хотя бы одного автора.');
                 return $this->render('update', [
@@ -162,10 +163,11 @@ class BookController extends Controller
      * Deletes an existing Book model.
      *
      * @param int $id ID
-     * @return \yii\web\Response
+     * @return Response
      * @throws NotFoundHttpException if the model cannot be found
+     * @throws \Throwable
      */
-    public function actionDelete($id)
+    public function actionDelete(int $id): Response
     {
         $model = $this->findModel($id);
 
@@ -185,7 +187,7 @@ class BookController extends Controller
      * @return Book the loaded model
      * @throws NotFoundHttpException if the model cannot be found
      */
-    protected function findModel($id)
+    protected function findModel(int $id): Book
     {
         if (($model = Book::findOne(['id' => $id])) !== null) {
             return $model;

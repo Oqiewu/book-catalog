@@ -1,9 +1,13 @@
 <?php
 
+declare(strict_types=1);
+
 namespace app\models;
 
 use yii\db\ActiveRecord;
 use yii\behaviors\TimestampBehavior;
+use yii\db\ActiveQuery;
+use yii\base\InvalidConfigException;
 
 /**
  * Author model
@@ -23,7 +27,7 @@ class Author extends ActiveRecord
     /**
      * {@inheritdoc}
      */
-    public static function tableName()
+    public static function tableName(): string
     {
         return '{{%authors}}';
     }
@@ -31,7 +35,7 @@ class Author extends ActiveRecord
     /**
      * {@inheritdoc}
      */
-    public function behaviors()
+    public function behaviors(): array
     {
         return [
             TimestampBehavior::class,
@@ -41,7 +45,7 @@ class Author extends ActiveRecord
     /**
      * {@inheritdoc}
      */
-    public function rules()
+    public function rules(): array
     {
         return [
             [['first_name', 'last_name'], 'required'],
@@ -53,7 +57,7 @@ class Author extends ActiveRecord
     /**
      * {@inheritdoc}
      */
-    public function attributeLabels()
+    public function attributeLabels(): array
     {
         return [
             'id' => 'ID',
@@ -68,9 +72,10 @@ class Author extends ActiveRecord
     /**
      * Gets query for [[Books]].
      *
-     * @return \yii\db\ActiveQuery
+     * @return ActiveQuery
+     * @throws InvalidConfigException
      */
-    public function getBooks()
+    public function getBooks(): ActiveQuery
     {
         return $this->hasMany(Book::class, ['id' => 'book_id'])
             ->viaTable('{{%book_author}}', ['author_id' => 'id']);
@@ -79,9 +84,9 @@ class Author extends ActiveRecord
     /**
      * Gets query for [[Subscriptions]].
      *
-     * @return \yii\db\ActiveQuery
+     * @return ActiveQuery
      */
-    public function getSubscriptions()
+    public function getSubscriptions(): ActiveQuery
     {
         return $this->hasMany(Subscription::class, ['author_id' => 'id']);
     }
@@ -91,7 +96,7 @@ class Author extends ActiveRecord
      *
      * @return string
      */
-    public function getFullName()
+    public function getFullName(): string
     {
         $parts = array_filter([
             $this->last_name,
@@ -107,8 +112,9 @@ class Author extends ActiveRecord
      *
      * @param int $year
      * @return int
+     * @throws InvalidConfigException
      */
-    public function getBooksCountByYear($year)
+    public function getBooksCountByYear(int $year): int
     {
         return $this->getBooks()
             ->where(['year' => $year])

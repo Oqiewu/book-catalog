@@ -1,10 +1,10 @@
 <?php
 
+declare(strict_types=1);
+
 namespace app\controllers;
 
-use app\models\Author;
 use app\models\Book;
-use Yii;
 use yii\web\Controller;
 use yii\db\Query;
 
@@ -19,22 +19,19 @@ class ReportController extends Controller
      * @param int|null $year
      * @return string
      */
-    public function actionTopAuthors($year = null)
+    public function actionTopAuthors(?int $year = null): string
     {
         if ($year === null) {
             $year = date('Y');
         }
 
-        // Validate year
         $year = (int) $year;
         if ($year < 1000 || $year > 9999) {
             $year = date('Y');
         }
 
-        // Get TOP 10 authors by books count in specific year
         $topAuthors = $this->getTopAuthorsByYear($year);
 
-        // Get available years for filter
         $availableYears = Book::find()
             ->select('year')
             ->distinct()
@@ -54,7 +51,7 @@ class ReportController extends Controller
      * @param int $year
      * @return array
      */
-    protected function getTopAuthorsByYear($year)
+    protected function getTopAuthorsByYear(int $year): array
     {
         $query = new Query();
         $query->select([
@@ -73,7 +70,6 @@ class ReportController extends Controller
 
         $results = $query->all();
 
-        // Transform results to include full name
         return array_map(function($row) {
             $parts = array_filter([
                 $row['last_name'],

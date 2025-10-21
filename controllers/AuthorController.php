@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace app\controllers;
 
 use app\models\Author;
@@ -9,6 +11,9 @@ use yii\web\NotFoundHttpException;
 use yii\filters\AccessControl;
 use yii\filters\VerbFilter;
 use yii\data\ActiveDataProvider;
+use yii\base\InvalidConfigException;
+use yii\web\Response;
+use yii\db\Exception;
 
 /**
  * AuthorController implements the CRUD actions for Author model.
@@ -18,7 +23,7 @@ class AuthorController extends Controller
     /**
      * {@inheritdoc}
      */
-    public function behaviors()
+    public function behaviors(): array
     {
         return [
             'access' => [
@@ -28,7 +33,7 @@ class AuthorController extends Controller
                     [
                         'allow' => true,
                         'actions' => ['create', 'update', 'delete'],
-                        'roles' => ['@'], // Only authenticated users
+                        'roles' => ['@'],
                     ],
                 ],
             ],
@@ -46,7 +51,7 @@ class AuthorController extends Controller
      *
      * @return string
      */
-    public function actionIndex()
+    public function actionIndex(): string
     {
         $dataProvider = new ActiveDataProvider([
             'query' => Author::find()->orderBy(['last_name' => SORT_ASC]),
@@ -66,8 +71,9 @@ class AuthorController extends Controller
      * @param int $id ID
      * @return string
      * @throws NotFoundHttpException if the model cannot be found
+     * @throws InvalidConfigException
      */
-    public function actionView($id)
+    public function actionView(int $id): string
     {
         $model = $this->findModel($id);
 
@@ -87,9 +93,10 @@ class AuthorController extends Controller
     /**
      * Creates a new Author model.
      *
-     * @return string|\yii\web\Response
+     * @return string|Response
+     * @throws Exception
      */
-    public function actionCreate()
+    public function actionCreate(): string|Response
     {
         $model = new Author();
 
@@ -107,10 +114,11 @@ class AuthorController extends Controller
      * Updates an existing Author model.
      *
      * @param int $id ID
-     * @return string|\yii\web\Response
+     * @return string|Response
      * @throws NotFoundHttpException if the model cannot be found
+     * @throws Exception
      */
-    public function actionUpdate($id)
+    public function actionUpdate(int $id): string|Response
     {
         $model = $this->findModel($id);
 
@@ -128,10 +136,11 @@ class AuthorController extends Controller
      * Deletes an existing Author model.
      *
      * @param int $id ID
-     * @return \yii\web\Response
+     * @return Response
      * @throws NotFoundHttpException if the model cannot be found
+     * @throws \Throwable
      */
-    public function actionDelete($id)
+    public function actionDelete(int $id): Response
     {
         $this->findModel($id)->delete();
         Yii::$app->session->setFlash('success', 'Автор успешно удален.');
@@ -146,7 +155,7 @@ class AuthorController extends Controller
      * @return Author the loaded model
      * @throws NotFoundHttpException if the model cannot be found
      */
-    protected function findModel($id)
+    protected function findModel(int $id): Author
     {
         if (($model = Author::findOne(['id' => $id])) !== null) {
             return $model;
