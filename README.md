@@ -1,233 +1,202 @@
-<p align="center">
-    <a href="https://github.com/yiisoft" target="_blank">
-        <img src="https://avatars0.githubusercontent.com/u/993323" height="100px">
-    </a>
-    <h1 align="center">Yii 2 Basic Project Template</h1>
-    <br>
-</p>
+# Каталог книг - Тестовое задание на Yii2
 
-Yii 2 Basic Project Template is a skeleton [Yii 2](https://www.yiiframework.com/) application best for
-rapidly creating small projects.
+Web-приложение для управления каталогом книг с подпиской на уведомления о новых книгах авторов.
 
-The template contains the basic features including user login/logout and a contact page.
-It includes all commonly used configurations that would allow you to focus on adding new
-features to your application.
+## Возможности
 
-[![Latest Stable Version](https://img.shields.io/packagist/v/yiisoft/yii2-app-basic.svg)](https://packagist.org/packages/yiisoft/yii2-app-basic)
-[![Total Downloads](https://img.shields.io/packagist/dt/yiisoft/yii2-app-basic.svg)](https://packagist.org/packages/yiisoft/yii2-app-basic)
-[![build](https://github.com/yiisoft/yii2-app-basic/workflows/build/badge.svg)](https://github.com/yiisoft/yii2-app-basic/actions?query=workflow%3Abuild)
+- **CRUD книг и авторов** (авторизованные пользователи)
+- **Просмотр каталога** (все пользователи, включая гостей)
+- **Подписка на авторов** с SMS-уведомлениями при добавлении новых книг
+- **Отчет ТОП-10 авторов** по количеству книг за выбранный год
+- **Загрузка обложек книг** в MinIO (S3-compatible storage)
+- **Связь многие-ко-многим** между книгами и авторами
 
-DIRECTORY STRUCTURE
--------------------
+## Технологии
 
-      assets/             contains assets definition
-      commands/           contains console commands (controllers)
-      config/             contains application configurations
-      controllers/        contains Web controller classes
-      mail/               contains view files for e-mails
-      models/             contains model classes
-      runtime/            contains files generated during runtime
-      tests/              contains various tests for the basic application
-      vendor/             contains dependent 3rd-party packages
-      views/              contains view files for the Web application
-      web/                contains the entry script and Web resources
+- **PHP 8.0+** / Yii2 Framework
+- **MySQL 8.0**
+- **MinIO** (S3-compatible object storage)
+- **Docker Compose**
+- **Bootstrap 5**
+- **SMS API**: smspilot.ru (ключ-эмулятор)
 
+## Быстрый старт
 
+### 1. Запуск
 
-REQUIREMENTS
-------------
-
-The minimum requirement by this project template that your Web server supports PHP 7.4.
-
-
-INSTALLATION
-------------
-
-### Install via Composer
-
-If you do not have [Composer](https://getcomposer.org/), you may install it by following the instructions
-at [getcomposer.org](https://getcomposer.org/doc/00-intro.md#installation-nix).
-
-You can then install this project template using the following command:
-
-~~~
-composer create-project --prefer-dist yiisoft/yii2-app-basic basic
-~~~
-
-Now you should be able to access the application through the following URL, assuming `basic` is the directory
-directly under the Web root.
-
-~~~
-http://localhost/basic/web/
-~~~
-
-### Install from an Archive File
-
-Extract the archive file downloaded from [yiiframework.com](https://www.yiiframework.com/download/) to
-a directory named `basic` that is directly under the Web root.
-
-Set cookie validation key in `config/web.php` file to some random secret string:
-
-```php
-'request' => [
-    // !!! insert a secret key in the following (if it is empty) - this is required by cookie validation
-    'cookieValidationKey' => '<secret random string goes here>',
-],
+```bash
+docker-compose up -d
+docker exec -it book-catalog-app composer install
+docker exec -it book-catalog-app php yii migrate
 ```
 
-You can then access the application through the following URL:
+### 2. Открыть в браузере
 
-~~~
-http://localhost/basic/web/
-~~~
+- **Приложение**: http://localhost:8080
+- **MinIO Console**: http://localhost:9001 (minioadmin/minioadmin)
 
+### 3. Войти в систему
 
-### Install with Docker
+- **Логин**: `admin`
+- **Пароль**: `admin`
 
-Update your vendor packages
+## Структура БД
 
-    docker-compose run --rm php composer update --prefer-dist
-    
-Run the installation triggers (creating cookie validation code)
-
-    docker-compose run --rm php composer install    
-    
-Start the container
-
-    docker-compose up -d
-    
-You can then access the application through the following URL:
-
-    http://127.0.0.1:8000
-
-**NOTES:** 
-- Minimum required Docker engine version `17.04` for development (see [Performance tuning for volume mounts](https://docs.docker.com/docker-for-mac/osxfs-caching/))
-- The default configuration uses a host-volume in your home directory `.docker-composer` for composer caches
-
-
-CONFIGURATION
--------------
-
-### Database
-
-Edit the file `config/db.php` with real data, for example:
-
-```php
-return [
-    'class' => 'yii\db\Connection',
-    'dsn' => 'mysql:host=localhost;dbname=yii2basic',
-    'username' => 'root',
-    'password' => '1234',
-    'charset' => 'utf8',
-];
+```sql
+authors         # Авторы (ФИО)
+books           # Книги (название, год, описание, ISBN, обложка)
+book_author     # Связь книг и авторов (many-to-many)
+subscriptions   # Подписки на авторов (email или телефон)
 ```
 
-**NOTES:**
-- Yii won't create the database for you, this has to be done manually before you can access it.
-- Check and edit the other files in the `config/` directory to customize your application as required.
-- Refer to the README in the `tests` directory for information specific to basic application tests.
+## Права доступа
 
+| Действие | Гость | Авторизованный |
+|----------|-------|----------------|
+| Просмотр книг/авторов | ✅ | ✅ |
+| Подписка на автора | ✅ | ✅ |
+| Просмотр отчета ТОП-10 | ✅ | ✅ |
+| Добавление книг/авторов | ❌ | ✅ |
+| Редактирование/удаление | ❌ | ✅ |
 
-TESTING
--------
+## Архитектура
 
-Tests are located in `tests` directory. They are developed with [Codeception PHP Testing Framework](https://codeception.com/).
-By default, there are 3 test suites:
+Проект следует принципам **DRY, KISS, SOLID, YAGNI**.
 
-- `unit`
-- `functional`
-- `acceptance`
+### Паттерны проектирования
 
-Tests can be executed by running
+1. **MVC** - базовая архитектура Yii2
+2. **Service Layer** - бизнес-логика в сервисах:
+   - `BookService` - управление книгами + уведомления
+   - `StorageService` - работа с MinIO/S3
+   - `SubscriptionService` - управление подписками
+   - `SmsService` - отправка SMS через smspilot.ru
+3. **Dependency Injection** - внедрение сервисов в контроллеры
+4. **Active Record** - ORM для работы с БД
+5. **Adapter** - StorageService как адаптер для AWS S3 SDK
 
-```
-vendor/bin/codecept run
-```
-
-The command above will execute unit and functional tests. Unit tests are testing the system components, while functional
-tests are for testing user interaction. Acceptance tests are disabled by default as they require additional setup since
-they perform testing in real browser. 
-
-
-### Running  acceptance tests
-
-To execute acceptance tests do the following:  
-
-1. Rename `tests/acceptance.suite.yml.example` to `tests/acceptance.suite.yml` to enable suite configuration
-
-2. Replace `codeception/base` package in `composer.json` with `codeception/codeception` to install full-featured
-   version of Codeception
-
-3. Update dependencies with Composer 
-
-    ```
-    composer update  
-    ```
-
-4. Download [Selenium Server](https://www.seleniumhq.org/download/) and launch it:
-
-    ```
-    java -jar ~/selenium-server-standalone-x.xx.x.jar
-    ```
-
-    In case of using Selenium Server 3.0 with Firefox browser since v48 or Google Chrome since v53 you must download [GeckoDriver](https://github.com/mozilla/geckodriver/releases) or [ChromeDriver](https://sites.google.com/a/chromium.org/chromedriver/downloads) and launch Selenium with it:
-
-    ```
-    # for Firefox
-    java -jar -Dwebdriver.gecko.driver=~/geckodriver ~/selenium-server-standalone-3.xx.x.jar
-    
-    # for Google Chrome
-    java -jar -Dwebdriver.chrome.driver=~/chromedriver ~/selenium-server-standalone-3.xx.x.jar
-    ``` 
-    
-    As an alternative way you can use already configured Docker container with older versions of Selenium and Firefox:
-    
-    ```
-    docker run --net=host selenium/standalone-firefox:2.53.0
-    ```
-
-5. (Optional) Create `yii2basic_test` database and update it by applying migrations if you have them.
-
-   ```
-   tests/bin/yii migrate
-   ```
-
-   The database configuration can be found at `config/test_db.php`.
-
-
-6. Start web server:
-
-    ```
-    tests/bin/yii serve
-    ```
-
-7. Now you can run all available tests
-
-   ```
-   # run all available tests
-   vendor/bin/codecept run
-
-   # run acceptance tests
-   vendor/bin/codecept run acceptance
-
-   # run only unit and functional tests
-   vendor/bin/codecept run unit,functional
-   ```
-
-### Code coverage support
-
-By default, code coverage is disabled in `codeception.yml` configuration file, you should uncomment needed rows to be able
-to collect code coverage. You can run your tests and collect coverage with the following command:
+### Структура
 
 ```
-#collect coverage for all tests
-vendor/bin/codecept run --coverage --coverage-html --coverage-xml
-
-#collect coverage only for unit tests
-vendor/bin/codecept run unit --coverage --coverage-html --coverage-xml
-
-#collect coverage for unit and functional tests
-vendor/bin/codecept run functional,unit --coverage --coverage-html --coverage-xml
+├── controllers/      # BookController, AuthorController, ReportController
+├── models/           # Author, Book, Subscription, BookAuthor
+├── services/         # BookService, StorageService, SubscriptionService, SmsService
+├── views/            # Представления для всех контроллеров
+├── migrations/       # Миграции БД
+└── config/           # Конфигурация приложения
 ```
 
-You can see code coverage output under the `tests/_output` directory.
+## Особенности реализации
+
+### MinIO для хранения обложек
+
+Вместо локального хранилища файлов используется **MinIO** (S3-compatible):
+- Bucket `book-covers` создается автоматически
+- Публичный доступ к изображениям через URL
+- Легкая миграция на AWS S3 в продакшене
+- Использует AWS SDK для PHP
+
+### SMS-уведомления
+
+При добавлении книги автоматически отправляются SMS всем подписчикам авторов:
+- API: smspilot.ru
+- Используется ключ-эмулятор (реальная отправка не происходит)
+- Нормализация телефонных номеров к формату +7XXXXXXXXXX
+
+## Команды для работы
+
+### Docker
+
+```bash
+# Запуск
+docker-compose up -d
+
+# Остановка
+docker-compose down
+
+# Остановка с удалением данных
+docker-compose down -v
+
+# Логи
+docker logs book-catalog-app
+```
+
+### Миграции
+
+```bash
+# Применить миграции
+docker exec -it book-catalog-app php yii migrate
+
+# Откатить последнюю миграцию
+docker exec -it book-catalog-app php yii migrate/down
+```
+
+### Тестирование
+
+```bash
+# Все тесты
+docker exec -it book-catalog-app vendor/bin/codecept run
+
+# Только unit
+docker exec -it book-catalog-app vendor/bin/codecept run unit
+
+# С покрытием
+docker exec -it book-catalog-app vendor/bin/codecept run --coverage
+```
+
+## Конфигурация (.env)
+
+```env
+# App
+APP_PORT=8081
+APP_DEBUG=true
+
+# Database
+DB_HOST=db
+DB_PORT=3306
+DB_DATABASE=book_catalog
+DB_USERNAME=root
+DB_PASSWORD=root
+
+# MinIO
+MINIO_ROOT_USER=minioadmin
+MINIO_ROOT_PASSWORD=minioadmin
+MINIO_ENDPOINT=http://minio:9000
+MINIO_BUCKET=book-covers
+```
+
+## Валидация
+
+### Книги
+- Название: обязательно, макс 255 символов
+- Год: обязательно, 1000-9999
+- ISBN: уникальный, только цифры/дефисы/X
+- Обложка: jpg/jpeg/png/gif, макс 2МБ
+- Авторы: хотя бы один
+
+### Авторы
+- Фамилия, Имя: обязательно
+- Отчество: необязательно
+
+### Подписки
+- Email или телефон: хотя бы одно обязательно
+- Уникальность: автор + email
+
+## Локальная установка (без Docker)
+
+```bash
+# 1. Установить зависимости
+composer install
+
+# 2. Настроить .env с параметрами локальной БД
+# 3. Создать БД MySQL
+# 4. Применить миграции
+php yii migrate
+
+# 5. Запустить сервер
+php yii serve
+
+# Открыть http://localhost:8080
+```
+
+**Примечание**: Для работы с MinIO без Docker потребуется локальная установка MinIO или настройка AWS S3.
