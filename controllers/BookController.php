@@ -36,12 +36,26 @@ class BookController extends Controller
         return [
             'access' => [
                 'class' => AccessControl::class,
-                'only' => ['create', 'update', 'delete'],
                 'rules' => [
                     [
                         'allow' => true,
-                        'actions' => ['create', 'update', 'delete'],
-                        'roles' => ['@'], // Only authenticated users
+                        'actions' => ['index', 'view'],
+                        'roles' => ['?', '@'], // Guests and authenticated users
+                    ],
+                    [
+                        'allow' => true,
+                        'actions' => ['create'],
+                        'roles' => ['createBook'],
+                    ],
+                    [
+                        'allow' => true,
+                        'actions' => ['update'],
+                        'roles' => ['updateBook'],
+                    ],
+                    [
+                        'allow' => true,
+                        'actions' => ['delete'],
+                        'roles' => ['deleteBook'],
                     ],
                 ],
             ],
