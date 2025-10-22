@@ -45,6 +45,31 @@ $config = [
         'authManager' => [
             'class' => 'yii\rbac\DbManager',
         ],
+        // Dependency Injection: Storage Service
+        'storageService' => [
+            'class' => 'app\services\StorageService',
+        ],
+        // Dependency Injection: Notification Service
+        'notificationService' => [
+            'class' => 'app\services\SmsService',
+        ],
+        // Dependency Injection: Notification Dispatcher
+        'notificationDispatcher' => function() {
+            return new \app\services\BookNotificationDispatcher(
+                \Yii::$app->get('notificationService')
+            );
+        },
+        // Dependency Injection: Book Service
+        'bookService' => function() {
+            return new \app\services\BookService(
+                \Yii::$app->get('storageService'),
+                \Yii::$app->get('notificationDispatcher')
+            );
+        },
+        // Dependency Injection: Subscription Service
+        'subscriptionService' => [
+            'class' => 'app\services\SubscriptionService',
+        ],
         /*
         'urlManager' => [
             'enablePrettyUrl' => true,
@@ -53,6 +78,20 @@ $config = [
             ],
         ],
         */
+    ],
+    'container' => [
+        'singletons' => [
+            // Interface bindings for dependency injection
+            'app\interfaces\StorageServiceInterface' => 'app\services\StorageService',
+            'app\interfaces\NotificationServiceInterface' => 'app\services\SmsService',
+            'app\interfaces\BookServiceInterface' => function() {
+                return \Yii::$app->get('bookService');
+            },
+            'app\interfaces\SubscriptionServiceInterface' => 'app\services\SubscriptionService',
+            'app\interfaces\NotificationDispatcherInterface' => function() {
+                return \Yii::$app->get('notificationDispatcher');
+            },
+        ],
     ],
     'params' => $params,
 ];

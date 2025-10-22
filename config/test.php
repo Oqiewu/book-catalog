@@ -1,4 +1,12 @@
 <?php
+
+require_once __DIR__ . '/../vendor/autoload.php';
+require_once __DIR__ . '/../vendor/yiisoft/yii2/Yii.php';
+
+use Dotenv\Dotenv;
+$dotenv = Dotenv::createImmutable(dirname(__DIR__));
+$dotenv->safeLoad();
+
 $params = require __DIR__ . '/params.php';
 $db = require __DIR__ . '/test_db.php';
 
@@ -18,7 +26,6 @@ return [
         'mailer' => [
             'class' => \yii\symfonymailer\Mailer::class,
             'viewPath' => '@app/mail',
-            // send all mails to a file by default.
             'useFileTransport' => true,
             'messageClass' => 'yii\symfonymailer\Message'
         ],
@@ -34,12 +41,39 @@ return [
         'request' => [
             'cookieValidationKey' => 'test',
             'enableCsrfValidation' => false,
-            // but if you absolutely need it set cookie domain to localhost
-            /*
-            'csrfCookie' => [
-                'domain' => 'localhost',
-            ],
-            */
+        ],
+        'storageService' => [
+            'class' => 'app\services\StorageService',
+        ],
+        'notificationService' => [
+            'class' => 'app\services\SmsService',
+        ],
+        'notificationDispatcher' => function() {
+            return new \app\services\BookNotificationDispatcher(
+                \Yii::$app->get('notificationService')
+            );
+        },
+        'bookService' => function() {
+            return new \app\services\BookService(
+                \Yii::$app->get('storageService'),
+                \Yii::$app->get('notificationDispatcher')
+            );
+        },
+        'subscriptionService' => [
+            'class' => 'app\services\SubscriptionService',
+        ],
+    ],
+    'container' => [
+        'singletons' => [
+            'app\interfaces\StorageServiceInterface' => 'app\services\StorageService',
+            'app\interfaces\NotificationServiceInterface' => 'app\services\SmsService',
+            'app\interfaces\BookServiceInterface' => function() {
+                return \Yii::$app->get('bookService');
+            },
+            'app\interfaces\SubscriptionServiceInterface' => 'app\services\SubscriptionService',
+            'app\interfaces\NotificationDispatcherInterface' => function() {
+                return \Yii::$app->get('notificationDispatcher');
+            },
         ],
     ],
     'params' => $params,
