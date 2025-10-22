@@ -6,6 +6,8 @@ namespace app\controllers;
 
 use app\models\Book;
 use yii\web\Controller;
+use yii\web\Response;
+use yii\filters\AccessControl;
 use yii\db\Query;
 
 /**
@@ -13,6 +15,25 @@ use yii\db\Query;
  */
 class ReportController extends Controller
 {
+    /**
+     * {@inheritdoc}
+     */
+    public function behaviors(): array
+    {
+        return [
+            'access' => [
+                'class' => AccessControl::class,
+                'rules' => [
+                    [
+                        'allow' => true,
+                        'actions' => ['top-authors'],
+                        'roles' => ['?', '@'],
+                    ],
+                ],
+            ],
+        ];
+    }
+
     /**
      * TOP 10 authors by books count in a specific year
      *
