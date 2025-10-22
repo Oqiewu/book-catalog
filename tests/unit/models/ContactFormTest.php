@@ -3,12 +3,14 @@
 namespace tests\unit\models;
 
 use app\models\ContactForm;
+use Codeception\Test\Unit;
+use UnitTester;
 use yii\mail\MessageInterface;
 
-class ContactFormTest extends \Codeception\Test\Unit
+class ContactFormTest extends Unit
 {
     /**
-     * @var \UnitTester
+     * @var UnitTester
      */
     public $tester;
 
@@ -25,8 +27,7 @@ class ContactFormTest extends \Codeception\Test\Unit
         ];
 
         verify($model->contact('admin@example.com'))->notEmpty();
-
-        // using Yii2 module actions to check email was sent
+        
         $this->tester->seeEmailIsSent();
 
         /** @var MessageInterface $emailMessage */

@@ -2,10 +2,11 @@
 
 namespace tests\unit\services;
 
-use app\services\SubscriptionService;
 use app\models\Author;
 use app\models\Subscription;
+use app\services\SubscriptionService;
 use Codeception\Test\Unit;
+use UnitTester;
 
 /**
  * Unit test for SubscriptionService
@@ -13,17 +14,9 @@ use Codeception\Test\Unit;
 class SubscriptionServiceTest extends Unit
 {
     /**
-     * @var \UnitTester
+     * @var UnitTester
      */
     protected $tester;
-
-    protected function _before()
-    {
-    }
-
-    protected function _after()
-    {
-    }
 
     public function testSubscribeWithEmail()
     {
@@ -151,5 +144,13 @@ class SubscriptionServiceTest extends Unit
 
         // Cleanup
         $author->delete();
+    }
+
+    protected function _before()
+    {
+    }
+
+    protected function _after()
+    {
     }
 }

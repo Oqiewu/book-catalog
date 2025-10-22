@@ -3,9 +3,10 @@
 namespace tests\unit\widgets;
 
 use app\widgets\Alert;
+use Codeception\Test\Unit;
 use Yii;
 
-class AlertTest extends \Codeception\Test\Unit
+class AlertTest extends Unit
 {
     public function testSingleErrorMessage()
     {
@@ -177,7 +178,8 @@ class AlertTest extends \Codeception\Test\Unit
         verify($renderingResult)->stringNotContainsString('alert-info');
     }
 
-    public function testSingleMixedMessages() {
+    public function testSingleMixedMessages()
+    {
         $errorMessage = 'This is an error message';
         $dangerMessage = 'This is a danger message';
         $successMessage = 'This is a success message';
@@ -204,7 +206,8 @@ class AlertTest extends \Codeception\Test\Unit
         verify($renderingResult)->stringContainsString('alert-warning');
     }
 
-    public function testMultipleMixedMessages() {
+    public function testMultipleMixedMessages()
+    {
         $firstErrorMessage = 'This is the first error message';
         $secondErrorMessage = 'This is the second error message';
         $firstDangerMessage = 'This is the first danger message';

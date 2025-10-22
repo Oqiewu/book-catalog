@@ -4,6 +4,8 @@ namespace tests\unit\services;
 
 use app\services\SmsService;
 use Codeception\Test\Unit;
+use ReflectionClass;
+use UnitTester;
 
 /**
  * Unit test for SmsService
@@ -11,24 +13,16 @@ use Codeception\Test\Unit;
 class SmsServiceTest extends Unit
 {
     /**
-     * @var \UnitTester
+     * @var UnitTester
      */
     protected $tester;
-
-    protected function _before()
-    {
-    }
-
-    protected function _after()
-    {
-    }
 
     public function testNormalizePhone()
     {
         $service = new SmsService();
 
         // Use reflection to access private method
-        $reflection = new \ReflectionClass($service);
+        $reflection = new ReflectionClass($service);
         $method = $reflection->getMethod('normalizePhone');
         $method->setAccessible(true);
 
@@ -68,5 +62,13 @@ class SmsServiceTest extends Unit
         $result = $service->send('+79991234567', '');
 
         $this->assertFalse($result, 'Send with empty message should fail');
+    }
+
+    protected function _before()
+    {
+    }
+
+    protected function _after()
+    {
     }
 }
