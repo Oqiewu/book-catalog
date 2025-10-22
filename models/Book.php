@@ -2,13 +2,14 @@
 
 namespace app\models;
 
-use yii\db\ActiveRecord;
-use yii\behaviors\TimestampBehavior;
-use yii\web\UploadedFile;
-use yii\db\ActiveQuery;
+use app\validators\IsbnValidator;
+use Yii;
 use yii\base\InvalidConfigException;
+use yii\behaviors\TimestampBehavior;
+use yii\db\ActiveQuery;
+use yii\db\ActiveRecord;
 use yii\db\Exception;
-use app\services\StorageService;
+use yii\web\UploadedFile;
 
 /**
  * Book model
@@ -65,7 +66,13 @@ class Book extends ActiveRecord
             [['isbn'], 'validateIsbn'],
             [['cover_image'], 'string', 'max' => 255],
             [['title', 'description', 'isbn'], 'trim'],
-            [['imageFile'], 'file', 'skipOnEmpty' => true, 'extensions' => 'png, jpg, jpeg, gif', 'maxSize' => 1024 * 1024 * 2],
+            [
+                ['imageFile'],
+                'file',
+                'skipOnEmpty' => true,
+                'extensions' => 'png, jpg, jpeg, gif',
+                'maxSize' => 1024 * 1024 * 2
+            ],
         ];
     }
 
@@ -88,6 +95,17 @@ class Book extends ActiveRecord
     }
 
     /**
+     * Get authors IDs for form.
+     *
+     * @return array
+     * @throws InvalidConfigException
+     */
+    public function getAuthorIds(): array
+    {
+        return $this->getAuthors()->select('id')->column();
+    }
+
+    /**
      * Gets query for [[Authors]].
      *
      * @return ActiveQuery
@@ -97,17 +115,6 @@ class Book extends ActiveRecord
     {
         return $this->hasMany(Author::class, ['id' => 'author_id'])
             ->viaTable('{{%book_author}}', ['book_id' => 'id']);
-    }
-
-    /**
-     * Get authors IDs for form.
-     *
-     * @return array
-     * @throws InvalidConfigException
-     */
-    public function getAuthorIds(): array
-    {
-        return $this->getAuthors()->select('id')->column();
     }
 
     /**
@@ -130,83 +137,31 @@ class Book extends ActiveRecord
     }
 
     /**
-     * Get cover image URL from MinIO.
+     * Get cover image URL from storage service.
      *
      * @return string|null
      */
     public function getCoverUrl(): ?string
     {
         if ($this->cover_image) {
-            $storageService = new StorageService();
+            $storageService = Yii::$app->get('storageService');
             return $storageService->getFileUrl($this->cover_image);
         }
         return null;
     }
 
     /**
-     * Validates ISBN with checksum verification
+     * Validates ISBN with checksum verification using dedicated validator
      *
      * @param string $attribute
      * @param array $params
      */
     public function validateIsbn($attribute, $params)
     {
-        if (empty($this->$attribute)) {
-            return; // ISBN необязателен
-        }
+        $validator = new IsbnValidator();
 
-        // Remove dashes and spaces
-        $isbn = str_replace(['-', ' '], '', $this->$attribute);
-
-        // Check if contains only allowed characters
-        if (!preg_match('/^[\dX]+$/', $isbn)) {
-            $this->addError($attribute, 'ISBN может содержать только цифры, дефисы и символ X');
-            return;
+        if (!$validator->validate($this->$attribute)) {
+            $this->addError($attribute, $validator->getError());
         }
-
-        if (strlen($isbn) == 10) {
-            // ISBN-10 validation
-            if (!$this->validateIsbn10($isbn)) {
-                $this->addError($attribute, 'Неверная контрольная сумма ISBN-10');
-            }
-        } elseif (strlen($isbn) == 13) {
-            // ISBN-13 validation
-            if (!$this->validateIsbn13($isbn)) {
-                $this->addError($attribute, 'Неверная контрольная сумма ISBN-13');
-            }
-        } else {
-            $this->addError($attribute, 'ISBN должен содержать 10 или 13 символов (без учета дефисов)');
-        }
-    }
-
-    /**
-     * Validates ISBN-10 checksum
-     *
-     * @param string $isbn
-     * @return bool
-     */
-    protected function validateIsbn10($isbn)
-    {
-        $check = 0;
-        for ($i = 0; $i < 10; $i++) {
-            $digit = ($isbn[$i] === 'X') ? 10 : (int)$isbn[$i];
-            $check += $digit * (10 - $i);
-        }
-        return ($check % 11 == 0);
-    }
-
-    /**
-     * Validates ISBN-13 checksum
-     *
-     * @param string $isbn
-     * @return bool
-     */
-    protected function validateIsbn13($isbn)
-    {
-        $check = 0;
-        for ($i = 0; $i < 13; $i++) {
-            $check += (int)$isbn[$i] * (($i % 2 == 0) ? 1 : 3);
-        }
-        return ($check % 10 == 0);
     }
 }

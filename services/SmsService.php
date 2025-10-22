@@ -4,31 +4,38 @@ declare(strict_types=1);
 
 namespace app\services;
 
+use app\interfaces\NotificationServiceInterface;
+use Exception;
 use Yii;
 
 /**
  * Service for sending SMS via smspilot.ru
  */
-final readonly class SmsService
+final class SmsService implements NotificationServiceInterface
 {
-    const API_URL = 'https://smspilot.ru/api.php';
-    const API_KEY = 'XXXXXXXXXXXXYYYYYYYYYYYYZZZZZZZZXXXXXXXXXXXXYYYYYYYYYYYYZZZZZZZZ';
+    private const API_URL = 'https://smspilot.ru/api.php';
+    private const API_KEY = 'XXXXXXXXXXXXYYYYYYYYYYYYZZZZZZZZXXXXXXXXXXXXYYYYYYYYYYYYZZZZZZZZ';
+
+    private string $apiKey;
+
+    public function __construct(?string $apiKey = null)
+    {
+        $this->apiKey = $apiKey ?? (Yii::$app->params['smspilot']['apiKey'] ?? self::API_KEY);
+    }
 
     /**
      * Send SMS message
      *
-     * @param string $phone Phone number
+     * @param string $recipient Phone number
      * @param string $message Message text
      * @return bool
      */
-    public function send(string $phone, string $message): bool
+    public function send(string $recipient, string $message): bool
     {
-        $apiKey = Yii::$app->params['smspilot']['apiKey'] ?? self::API_KEY;
-
         $params = [
             'send' => $message,
-            'to' => $this->normalizePhone($phone),
-            'apikey' => $apiKey,
+            'to' => $this->normalizePhone($recipient),
+            'apikey' => $this->apiKey,
             'format' => 'json',
         ];
 
@@ -38,20 +45,46 @@ final readonly class SmsService
             if ($response && isset($response['send'])) {
                 foreach ($response['send'] as $result) {
                     if ($result['status'] === 0) {
-                        Yii::info("SMS sent successfully to {$phone}", __METHOD__);
+                        Yii::info("SMS sent successfully to {$recipient}", __METHOD__);
                         return true;
                     } else {
-                        Yii::error("SMS sending failed: " . ($result['error']['description'] ?? 'Unknown error'), __METHOD__);
+                        Yii::error(
+                            "SMS sending failed: " . ($result['error']['description'] ?? 'Unknown error'),
+                            __METHOD__
+                        );
                     }
                 }
             }
 
             return false;
-
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             Yii::error("SMS service error: " . $e->getMessage(), __METHOD__);
             return false;
         }
+    }
+
+    /**
+     * Normalize phone number format
+     *
+     * @param string $phone
+     * @return string
+     */
+    private function normalizePhone(string $phone): string
+    {
+        // Remove all non-numeric characters except +
+        $phone = preg_replace('/[^\d\+]/', '', $phone);
+
+        // If phone starts with 8, replace with +7
+        if (str_starts_with($phone, '8')) {
+            $phone = '+7' . substr($phone, 1);
+        }
+
+        // If phone doesn't start with +, add +7
+        if (!str_starts_with($phone, '+')) {
+            $phone = '+7' . $phone;
+        }
+
+        return $phone;
     }
 
     /**
@@ -60,7 +93,7 @@ final readonly class SmsService
      * @param array $params
      * @return array|null
      */
-    protected function makeRequest(array $params): ?string
+    private function makeRequest(array $params): ?array
     {
         $url = self::API_URL . '?' . http_build_query($params);
 
@@ -79,29 +112,5 @@ final readonly class SmsService
         }
 
         return null;
-    }
-
-    /**
-     * Normalize phone number format
-     *
-     * @param string $phone
-     * @return string
-     */
-    protected function normalizePhone(string $phone): string
-    {
-        // Remove all non-numeric characters except +
-        $phone = preg_replace('/[^\d\+]/', '', $phone);
-
-        // If phone starts with 8, replace with +7
-        if (str_starts_with($phone, '8')) {
-            $phone = '+7' . substr($phone, 1);
-        }
-
-        // If phone doesn't start with +, add +7
-        if (!str_starts_with($phone, '+')) {
-            $phone = '+7' . $phone;
-        }
-
-        return $phone;
     }
 }

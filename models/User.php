@@ -60,7 +60,7 @@ class User extends ActiveRecord implements IdentityInterface
     /**
      * {@inheritdoc}
      */
-    public static function findIdentity($id): User
+    public static function findIdentity($id): ?User
     {
         return static::findOne(['id' => $id, 'status' => self::STATUS_ACTIVE]);
     }
@@ -68,7 +68,7 @@ class User extends ActiveRecord implements IdentityInterface
     /**
      * {@inheritdoc}
      */
-    public static function findIdentityByAccessToken($token, $type = null): User
+    public static function findIdentityByAccessToken($token, $type = null): ?User
     {
         return static::findOne(['auth_key' => $token, 'status' => self::STATUS_ACTIVE]);
     }

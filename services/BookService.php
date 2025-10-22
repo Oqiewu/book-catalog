@@ -4,30 +4,33 @@ declare(strict_types=1);
 
 namespace app\services;
 
+use app\interfaces\BookServiceInterface;
+use app\interfaces\NotificationDispatcherInterface;
+use app\interfaces\StorageServiceInterface;
 use app\models\Book;
-use app\models\Subscription;
+use Exception;
 use Yii;
 use yii\web\UploadedFile;
-use app\models\Author;
-use yii\base\InvalidConfigException;
 
 /**
  * Service for managing books
+ * Single Responsibility: handles only book CRUD operations
  */
-final readonly class BookService
+final readonly class BookService implements BookServiceInterface
 {
-    private StorageService $storageService;
+    private StorageServiceInterface $storageService;
+    private NotificationDispatcherInterface $notificationDispatcher;
 
-    public function __construct(StorageService $storageService = null)
-    {
-        $this->storageService = $storageService ?? new StorageService();
+    public function __construct(
+        StorageServiceInterface $storageService,
+        NotificationDispatcherInterface $notificationDispatcher
+    ) {
+        $this->storageService = $storageService;
+        $this->notificationDispatcher = $notificationDispatcher;
     }
+
     /**
-     * Save book with image upload and authors linking
-     *
-     * @param Book $book
-     * @param array $authorIds
-     * @return bool
+     * {@inheritdoc}
      */
     public function save(Book $book, array $authorIds = []): bool
     {
@@ -36,20 +39,7 @@ final readonly class BookService
         try {
             $isNewBook = $book->isNewRecord;
 
-            $book->imageFile = UploadedFile::getInstance($book, 'imageFile');
-
-            if ($book->imageFile) {
-                $oldCover = $book->cover_image;
-                $fileName = $this->storageService->generateFileName($book->imageFile);
-
-                if ($this->storageService->uploadFile($book->imageFile, $fileName)) {
-                    $book->cover_image = $fileName;
-
-                    if ($oldCover && !$isNewBook) {
-                        $this->storageService->deleteFile($oldCover);
-                    }
-                }
-            }
+            $this->handleImageUpload($book);
 
             if (!$book->save()) {
                 $transaction->rollBack();
@@ -63,12 +53,11 @@ final readonly class BookService
             $transaction->commit();
 
             if ($isNewBook) {
-                $this->notifySubscribers($book);
+                $this->notificationDispatcher->notifySubscribers($book);
             }
 
             return true;
-
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             $transaction->rollBack();
             Yii::error($e->getMessage(), __METHOD__);
             return false;
@@ -76,11 +65,31 @@ final readonly class BookService
     }
 
     /**
-     * Delete book with its cover image
+     * Handle image upload for the book
      *
      * @param Book $book
-     * @return bool
-     * @throws \Throwable
+     * @return void
+     */
+    private function handleImageUpload(Book $book): void
+    {
+        $book->imageFile = UploadedFile::getInstance($book, 'imageFile');
+
+        if ($book->imageFile) {
+            $oldCover = $book->cover_image;
+            $fileName = $this->storageService->generateFileName($book->imageFile);
+
+            if ($this->storageService->uploadFile($book->imageFile, $fileName)) {
+                $book->cover_image = $fileName;
+
+                if ($oldCover && !$book->isNewRecord) {
+                    $this->storageService->deleteFile($oldCover);
+                }
+            }
+        }
+    }
+
+    /**
+     * {@inheritdoc}
      */
     public function delete(Book $book): bool
     {
@@ -98,56 +107,10 @@ final readonly class BookService
 
             $transaction->commit();
             return true;
-
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             $transaction->rollBack();
             Yii::error($e->getMessage(), __METHOD__);
             return false;
         }
-    }
-
-    /**
-     * Notify subscribers about new book
-     *
-     * @param Book $book
-     * @return void
-     * @throws InvalidConfigException
-     */
-    protected function notifySubscribers(Book $book): void
-    {
-        $authorIds = $book->getAuthorIds();
-
-        if (empty($authorIds)) {
-            return;
-        }
-
-        $subscriptions = Subscription::find()
-            ->where(['author_id' => $authorIds])
-            ->all();
-
-        $smsService = new SmsService();
-
-        foreach ($subscriptions as $subscription) {
-            if ($subscription->phone) {
-                $message = $this->buildNotificationMessage($book, $subscription->author);
-                $smsService->send($subscription->phone, $message);
-            }
-        }
-    }
-
-    /**
-     * Build notification message
-     *
-     * @param Book $book
-     * @param Author $author
-     * @return string
-     */
-    protected function buildNotificationMessage(Book $book, Author $author): string
-    {
-        return sprintf(
-            'Новая книга "%s" автора %s уже в каталоге!',
-            $book->title,
-            $author->getFullName()
-        );
     }
 }

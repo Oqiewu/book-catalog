@@ -4,26 +4,27 @@ declare(strict_types=1);
 
 namespace app\controllers;
 
-use app\models\Subscription;
+use app\interfaces\SubscriptionServiceInterface;
 use app\models\Author;
-use app\services\SubscriptionService;
+use app\models\Subscription;
 use Yii;
 use yii\db\Exception;
-use yii\web\Controller;
-use yii\web\Response;
 use yii\filters\AccessControl;
 use yii\filters\VerbFilter;
+use yii\web\Controller;
+use yii\web\Response;
 
 /**
  * SubscriptionController handles author subscriptions.
+ * Follows Dependency Inversion Principle by depending on interface
  */
 class SubscriptionController extends Controller
 {
-    private SubscriptionService $subscriptionService;
+    private SubscriptionServiceInterface $subscriptionService;
 
-    public function __construct($id, $module, SubscriptionService $subscriptionService = null, $config = [])
+    public function __construct($id, $module, ?SubscriptionServiceInterface $subscriptionService = null, $config = [])
     {
-        $this->subscriptionService = $subscriptionService ?? new SubscriptionService();
+        $this->subscriptionService = $subscriptionService ?? Yii::$app->get('subscriptionService');
         parent::__construct($id, $module, $config);
     }
 
@@ -83,7 +84,8 @@ class SubscriptionController extends Controller
         $subscription = $this->subscriptionService->subscribe($authorId, $email, $phone);
 
         if ($subscription) {
-            Yii::$app->session->setFlash('success',
+            Yii::$app->session->setFlash(
+                'success',
                 sprintf('Вы успешно подписались на новые книги автора %s', $author->getFullName())
             );
         } else {
@@ -120,7 +122,8 @@ class SubscriptionController extends Controller
             );
 
             if ($subscription) {
-                Yii::$app->session->setFlash('success',
+                Yii::$app->session->setFlash(
+                    'success',
                     sprintf('Вы успешно подписались на новые книги автора %s', $author->getFullName())
                 );
                 return $this->redirect(['author/view', 'id' => $authorId]);

@@ -4,27 +4,29 @@ declare(strict_types=1);
 
 namespace app\controllers;
 
-use app\models\Book;
+use app\interfaces\BookServiceInterface;
 use app\models\Author;
-use app\services\BookService;
+use app\models\Book;
+use Throwable;
 use Yii;
-use yii\web\Controller;
-use yii\web\NotFoundHttpException;
+use yii\data\ActiveDataProvider;
 use yii\filters\AccessControl;
 use yii\filters\VerbFilter;
-use yii\data\ActiveDataProvider;
+use yii\web\Controller;
+use yii\web\NotFoundHttpException;
 use yii\web\Response;
 
 /**
  * BookController implements the CRUD actions for Book model.
+ * Follows Dependency Inversion Principle by depending on interface
  */
 class BookController extends Controller
 {
-    private BookService $bookService;
+    private BookServiceInterface $bookService;
 
-    public function __construct($id, $module, BookService $bookService = null, $config = [])
+    public function __construct($id, $module, ?BookServiceInterface $bookService = null, $config = [])
     {
-        $this->bookService = $bookService ?? new BookService();
+        $this->bookService = $bookService ?? Yii::$app->get('bookService');
         parent::__construct($id, $module, $config);
     }
 
@@ -40,7 +42,7 @@ class BookController extends Controller
                     [
                         'allow' => true,
                         'actions' => ['index', 'view'],
-                        'roles' => ['?', '@'], // Guests and authenticated users
+                        'roles' => ['?', '@'],
                     ],
                     [
                         'allow' => true,
@@ -99,6 +101,22 @@ class BookController extends Controller
         return $this->render('view', [
             'model' => $this->findModel($id),
         ]);
+    }
+
+    /**
+     * Finds the Book model based on its primary key value.
+     *
+     * @param int $id ID
+     * @return Book the loaded model
+     * @throws NotFoundHttpException if the model cannot be found
+     */
+    protected function findModel(int $id): Book
+    {
+        if (($model = Book::findOne(['id' => $id])) !== null) {
+            return $model;
+        }
+
+        throw new NotFoundHttpException('Запрошенная страница не найдена.');
     }
 
     /**
@@ -179,7 +197,7 @@ class BookController extends Controller
      * @param int $id ID
      * @return Response
      * @throws NotFoundHttpException if the model cannot be found
-     * @throws \Throwable
+     * @throws Throwable
      */
     public function actionDelete(int $id): Response
     {
@@ -192,21 +210,5 @@ class BookController extends Controller
         }
 
         return $this->redirect(['index']);
-    }
-
-    /**
-     * Finds the Book model based on its primary key value.
-     *
-     * @param int $id ID
-     * @return Book the loaded model
-     * @throws NotFoundHttpException if the model cannot be found
-     */
-    protected function findModel(int $id): Book
-    {
-        if (($model = Book::findOne(['id' => $id])) !== null) {
-            return $model;
-        }
-
-        throw new NotFoundHttpException('Запрошенная страница не найдена.');
     }
 }
